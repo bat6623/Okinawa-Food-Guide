@@ -683,13 +683,15 @@
             <div
                 style="margin-bottom:16px; padding:12px; background:#f0f9ff; border-radius:8px; border:1px solid #bae6fd;">
                 <p style="font-size:13px; color:#0369a1; margin-bottom:4px; font-weight:500;">
-                    <i class="fas fa-file-csv" style="margin-right:4px;"></i> 需要範本嗎？
+                    <i class="fas fa-file-csv" style="margin-right:4px;"></i> 建立新資料？
                 </p>
-                <p style="font-size:12px; color:#0c4a6e;">
-                    <a href="https://docs.google.com/spreadsheets/d/1igtQX_K3H24gSYxyh6zeridz4pbYVRTCJYTpCdCRnF4/edit?usp=sharing"
-                        target="_blank" style="color:#0284c7; text-decoration:underline;">點此開啟範本試算表</a>
-                    <br>(請選擇「檔案」>「建立副本」來編輯)
+                <p style="font-size:12px; color:#0c4a6e; margin-bottom:8px;">
+                    下載欄位規範範本，填寫後匯入 Google Sheet 即可。
                 </p>
+                <button onclick="downloadCsvTemplate()"
+                    style="background:#0284c7; color:white; border:none; padding:6px 12px; border-radius:14px; font-size:12px; cursor:pointer;">
+                    <i class="fas fa-download"></i> 下載 CSV 範本
+                </button>
             </div>
             <input type="text" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/..."
                 style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:14px;">
@@ -1631,6 +1633,22 @@
             if (cat.includes('酒') || cat.includes('居酒屋')) return images.alcohol;
 
             return images.default;
+        }
+
+        function downloadCsvTemplate() {
+            // Updated columns based on getIdx mapping
+            const headers = ["店名", "種類", "地區", "地址", "MapCode", "GoogleMap連結", "緯度", "經度", "預算", "推薦菜色", "介紹", "圖片連結"];
+            const example = ["範例餐廳", "美食/景點", "北部/中部/南部", "沖繩縣那霸市...", "33 123 456*78", "https://goo.gl/maps/...", "26.2123", "127.6791", "1000-2000", "苦瓜炒蛋", "這是一間範例餐廳", "https://example.com/image.jpg"];
+
+            const csvContent = "\uFEFF" + headers.join(",") + "\n" + example.join(",");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "okinawa_food_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
