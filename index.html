@@ -640,6 +640,10 @@
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" id="search-input" placeholder="搜尋餐廳、分類..." />
+                <button id="settings-btn" onclick="openSettings()"
+                    style="background:none; border:none; color:#999; margin-left:8px; cursor:pointer; padding:4px;">
+                    <i class="fas fa-cog"></i>
+                </button>
             </div>
             <div id="search-results"></div>
         </div>
@@ -666,13 +670,36 @@
 
     <div id="map"></div>
 
+    <!-- Settings Modal -->
+    <div id="settings-modal"
+        style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+        <div
+            style="background:white; width:90%; max-width:400px; border-radius:16px; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-bottom:16px; font-size:18px;">資料來源設定</h3>
+            <p style="font-size:14px; color:#666; margin-bottom:12px;">請輸入 Google Sheet 的分享連結或 JSONP 網址：</p>
+            <input type="text" id="sheet-url-input" placeholder="https://docs.google.com/spreadsheets/..."
+                style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:16px; font-size:14px;">
+
+            <div style="display:flex; justify-content:space-between; gap:10px;">
+                <button onclick="resetSettings()"
+                    style="flex:1; padding:10px; border:none; background:#f2f2f7; color:#FF3B30; border-radius:8px; font-weight:500; cursor:pointer;">重置預設</button>
+                <button onclick="closeSettings()"
+                    style="flex:1; padding:10px; border:none; background:#f2f2f7; color:#007AFF; border-radius:8px; font-weight:500; cursor:pointer;">取消</button>
+                <button onclick="saveSettings()"
+                    style="flex:1; padding:10px; border:none; background:#007AFF; color:white; border-radius:8px; font-weight:500; cursor:pointer;">儲存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
     <script>
         // --- CONFIG ---
-        const SHEET_JSONP = "https://docs.google.com/spreadsheets/d/1igtQX_K3H24gSYxyh6zeridz4pbYVRTCJYTpCdCRnF4/gviz/tq?tqx=out:json&tq&callback=window.handleJsonp";
+        // --- CONFIG ---
+        const DEFAULT_SHEET_JSONP = "https://docs.google.com/spreadsheets/d/1igtQX_K3H24gSYxyh6zeridz4pbYVRTCJYTpCdCRnF4/gviz/tq?tqx=out:json&tq&callback=window.handleJsonp";
+        let SHEET_JSONP = localStorage.getItem('custom_sheet_url') || DEFAULT_SHEET_JSONP;
 
         // --- STATE ---
         let map, markersCluster;
@@ -1494,6 +1521,53 @@
             });
         }
 
+
+
+        // --- SETTINGS ---
+        function openSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            // Pre-fill with current custom URL or empty
+            const current = localStorage.getItem('custom_sheet_url');
+            document.getElementById('sheet-url-input').value = current || '';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function resetSettings() {
+            if (confirm("確定要恢復預設資料來源嗎？")) {
+                localStorage.removeItem('custom_sheet_url');
+                location.reload();
+            }
+        }
+
+        function saveSettings() {
+            const val = document.getElementById('sheet-url-input').value.trim();
+            if (!val) {
+                alert("請輸入網址");
+                return;
+            }
+
+            // Simple conversion logic:
+            // If user pastes normal sheet URL: .../edit#gid=0 -> transform to JSONP
+            // If user pastes JSONP URL: keep it
+            let finalUrl = val;
+
+            if (val.includes('docs.google.com/spreadsheets')) {
+                // Extract Sheet ID
+                const match = val.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (match && match[1]) {
+                    const id = match[1];
+                    // Default query
+                    finalUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&tq&callback=window.handleJsonp`;
+                }
+            }
+
+            localStorage.setItem('custom_sheet_url', finalUrl);
+            alert("設定已儲存，網頁將重新整理");
+            location.reload();
+        }
 
         function getCategoryIcon(category) {
             const cat = (category || "").toLowerCase();
