@@ -640,32 +640,34 @@
             <div class="search-box">
                 <i class="fas fa-search"></i>
                 <input type="text" id="search-input" placeholder="搜尋餐廳、分類..." />
-                <button id="settings-btn" onclick="openSettings()"
-                    style="background:none; border:none; color:#999; margin-left:8px; cursor:pointer; padding:4px;">
-                    <i class="fas fa-cog"></i>
-                </button>
-            </div>
-            <div id="search-results"></div>
-        </div>
-
-        <div class="filter-container">
-            <div class="btn-search-toggle" id="btn-search-toggle">
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="filter-scroll" id="filter-list">
-                <div class="pill active" data-filter="all">全部</div>
-                <div class="pill" data-filter="北部">北部</div>
-                <div class="pill" data-filter="中部">中部</div>
-                <div class="pill" data-filter="南部">南部</div>
-                <div class="pill" data-filter="飯店">飯店</div>
             </div>
         </div>
+        <div id="search-results"></div>
+    </div>
 
-        <div class="card-scroll-view" id="card-container">
-            <!-- Cards will be injected here -->
+    <div class="filter-container">
+        <div class="btn-search-toggle" id="btn-search-toggle">
+            <i class="fas fa-search"></i>
+        </div>
+        <div class="filter-scroll" id="filter-list">
+            <div class="pill active" data-filter="all">全部</div>
+            <div class="pill" data-filter="北部">北部</div>
+            <div class="pill" data-filter="中部">中部</div>
+            <div class="pill" data-filter="南部">南部</div>
+            <div class="pill" data-filter="飯店">飯店</div>
+            <div class="pill" data-filter="飯店">飯店</div>
         </div>
 
-        <button class="btn-locate" id="btn-locate"><i class="fas fa-crosshairs"></i></button>
+        <div class="btn-search-toggle" onclick="openSettings()" style="margin-left: 8px; margin-right: 16px;">
+            <i class="fas fa-cog" style="color: #666;"></i>
+        </div>
+    </div>
+
+    <div class="card-scroll-view" id="card-container">
+        <!-- Cards will be injected here -->
+    </div>
+
+    <button class="btn-locate" id="btn-locate"><i class="fas fa-crosshairs"></i></button>
     </div>
 
     <div id="map"></div>
