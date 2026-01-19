@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>沖繩美食地圖 | Okinawa Food Guide</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.png" type="image/png">
+    <meta name="theme-color" content="#007AFF">
+    <link rel="apple-touch-icon" href="icon.png">
+
+
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            /* Apple Blue */
+            --accent-color: #FCCE02;
+            /* Yellow */
+            --surface: #ffffff;
+            --text-main: #1c1c1e;
+            --text-sub: #8e8e93;
+            --danger: #FF3B30;
+            --success: #34C759;
+            --radius-card: 16px;
+            --radius-pill: 20px;
+            --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.12);
+            --safe-area-top: env(safe-area-inset-top, 20px);
+            --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Roboto', 'Noto Sans TC', sans-serif;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #f2f2f7;
+        }
+
+        /* Full Screen Loading */
+        #loading {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.4s ease;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e1e4e8;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Map */
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* UI Overlay */
+        .ui-safe-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            padding-top: var(--safe-area-top);
+            padding-bottom: var(--safe-area-bottom);
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            /* Anchor for absolute results */
+            pointer-events: auto;
+            padding: 0 16px;
+            margin-bottom: 8px;
+            display: none;
+            /* Hidden by default */
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: var(--radius-pill);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-box i {
+            color: var(--text-sub);
+            margin-right: 8px;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 16px;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        /* Search Results Dropdown */
+        #search-results {
+            position: absolute;
+            top: 100%;
+            left: 16px;
+            right: 16px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-height: 40vh;
+            overflow-y: auto;
+            z-index: 2000;
+            display: none;
+            margin-top: 8px;
+        }
+
+        .search-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-item:active {
+            background: #f5f5f5;
+        }
+
+        .search-item-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-main);
+        }
+
+        .search-item-meta {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 2px;
+        }
+
+        /* Top Filter Bar */
+        .filter-container {
+            pointer-events: auto;
+            /* Remove background/backdrop here as search box has it, or keep it consistent */
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            padding-left: 16px;
+            /* Adjusted layout */
+        }
+
+        .btn-search-toggle {
+            flex: 0 0 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 8px;
+            cursor: pointer;
+            color: #000;
+            border: 1px solid #c7c7cc;
+            transition: all 0.2s;
+        }
+
+        .btn-search-toggle.active {
+            background: var(--accent-color);
+            color: #000;
+            border-color: #d4a000;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(252, 206, 2, 0.4);
+        }
+
+        .filter-scroll {
+            display: flex;
+            gap: 10px;
+            padding: 4px 16px 16px 4px;
+            /* Added bottom/left padding for shadows */
+            overflow-x: auto;
+            flex: 1;
+            scrollbar-width: none;
+            justify-content: flex-start;
+        }
+
+        .filter-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .pill {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: var(--radius-pill);
+            background: #fff;
+            color: #000;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid #c7c7cc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pill.active {
+            background: var(--accent-color);
+            color: #000;
+            font-weight: 700;
+            border-color: #d4a000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+            transform: scale(1.02);
+        }
+
+        /* Floating Locate Button */
+        .btn-locate {
+            position: absolute;
+            bottom: calc(var(--safe-area-bottom) + 80px);
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--surface);
+            color: var(--primary-color);
+            border-radius: 50%;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            pointer-events: auto;
+            border: none;
+        }
+
+        .btn-locate:active {
+            transform: scale(0.95);
+            background: #f9f9f9;
+        }
+
+        /* Popup Styles (Card Style) */
+        .leaflet-popup-content-wrapper {
+            padding: 0;
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+            width: 300px !important;
+        }
+
+        .leaflet-popup-tip {
+            background: #fff;
+        }
+
+        .leaflet-container a.leaflet-popup-close-button {
+            top: 8px;
+            right: 8px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            font-size: 20px;
+        }
+
+        .card-header {
+            height: 100px;
+            padding: 16px;
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+            /* Default High */
+            display: flex;
+            align-items: flex-end;
+            position: relative;
+        }
+
+        .card-header[data-price="Low"] {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        }
+
+        .card-header[data-price="Medium"] {
+            background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .card-body {
+            padding: 16px;
+            background: #fff;
+        }
+
+        .tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            background: #f2f2f7;
+            color: var(--text-sub);
+        }
+
+        .tag.cat {
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--primary-color);
+        }
+
+        .tag.price {
+            background: rgba(255, 204, 0, 0.2);
+            color: #d48806;
+        }
+
+        .info-row {
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        .info-row i {
+            color: var(--text-sub);
+            width: 20px;
+            text-align: center;
+            margin-right: 4px;
+        }
+
+        .must-order {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .desc {
+            color: var(--text-sub);
+            font-size: 13px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .btn-nav {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #0062cc;
+            color: #ffffff !important;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+            transition: opacity 0.2s;
+        }
+
+        .btn-nav:active {
+            opacity: 0.8;
+        }
+
+        /* Popup Card */
+        .leaflet-popup-content-wrapper {
+            padding: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .leaflet-popup-content {
+            margin: 0 !important;
+            width: 280px !important;
+        }
+
+        .popup-card {
+            width: 100%;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .popup-content-p {
+            padding: 16px;
+        }
+
+        /* Marker Clusters */
+        .marker-cluster-small {
+            background-color: rgba(181, 226, 140, 0.6);
+        }
+
+        .marker-cluster-small div {
+            background-color: rgba(110, 204, 57, 0.6);
+        }
+
+        .marker-cluster-medium {
+            background-color: rgba(241, 211, 87, 0.6);
+        }
+
+        .marker-cluster-medium div {
+            background-color: rgba(240, 194, 12, 0.6);
+        }
+
+        .marker-cluster-large {
+            background-color: rgba(253, 156, 115, 0.6);
+        }
+
+        .marker-cluster-large div {
+            background-color: rgba(241, 128, 23, 0.6);
+        }
+
+        .marker-cluster {
+            background-clip: padding-box;
+            border-radius: 20px;
+            font-weight: 700;
+            color: #333;
+            padding: 2px 6px;
+        }
+
+        .leaflet-tooltip {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+
+        .leaflet-tooltip-top:before,
+        .leaflet-tooltip-bottom:before,
+        .leaflet-tooltip-left:before,
+        .leaflet-tooltip-right:before {
+            border: none !important;
+        }
+
+        /* Card Scroll View */
+        .card-scroll-view {
+            position: absolute;
+            bottom: var(--safe-area-bottom);
+            left: 0;
+            width: 100%;
+            height: auto;
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding: 0 16px 16px 16px;
+            gap: 12px;
+            z-index: 2000;
+            pointer-events: auto;
+            /* Hide scrollbar */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .card-scroll-view::-webkit-scrollbar {
+            display: none;
+        }
+
+        .card-item {
+            flex: 0 0 85%;
+            /* Mobile width */
+            max-width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            overflow: hidden;
+            scroll-snap-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: row;
+            /* Horizontal layout */
+            height: 100px;
+        }
+
+        .card-item:active {
+            transform: scale(0.98);
+        }
+
+        .card-img {
+            width: 100px;
+            height: 100%;
+            object-fit: cover;
+            flex-shrink: 0;
+            background-color: #eee;
+        }
+
+        .card-info {
+            flex: 1;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            /* Text truncation fix */
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 4px;
+        }
+
+        .card-dist {
+            font-size: 12px;
+            color: var(--primary-color);
+            background: rgba(0, 122, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .card-body-text {
+            font-size: 13px;
+            color: var(--text-sub);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .card-highlight {
+            color: var(--danger);
+            font-weight: 500;
+            font-size: 12px;
+            margin-top: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Adjust Locate Button Position */
+        .btn-locate {
+            bottom: calc(var(--safe-area-bottom) + 130px);
+            /* Move above cards */
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Loading -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <div style="font-weight:500; color:#555;">Loading Maps...</div>
+    </div>
+
+    <!-- UI Overlay -->
+    <div class="ui-safe-area">
+
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-input" placeholder="搜尋餐廳、分類..." />
+            </div>
+            <div id="search-results"></div>
+        </div>
+
+        <div class="filter-container">
+            <div class="btn-search-toggle" id="btn-search-toggle">
+                <i class="fas fa-search"></i>
+            </div>
+            <div class="filter-scroll" id="filter-list">
+                <div class="pill active" data-filter="all">全部</div>
+                <div class="pill" data-filter="北部">北部</div>
+                <div class="pill" data-filter="中部">中部</div>
+                <div class="pill" data-filter="南部">南部</div>
+                <div class="pill" data-filter="飯店">飯店</div>
+            </div>
+        </div>
+
+        <div class="card-scroll-view" id="card-container">
+            <!-- Cards will be injected here -->
+        </div>
+
+        <button class="btn-locate" id="btn-locate"><i class="fas fa-crosshairs"></i></button>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <script>
+        // --- CONFIG ---
+        const SHEET_JSONP = "https://docs.google.com/spreadsheets/d/1igtQX_K3H24gSYxyh6zeridz4pbYVRTCJYTpCdCRnF4/gviz/tq?tqx=out:json&tq&callback=window.handleJsonp";
+
+        // --- STATE ---
+        let map, markersCluster;
+        let allData = [];
+        let userMarker;
+        // let categories = new Set(); // Removed
+
+        // --- INIT ---
+        function initApp() {
+            // 1. Setup Map (CartoDB Voyager)
+            map = L.map('map', { zoomControl: false }).setView([26.4, 127.9], 10);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            // Move Zoom Control to bottom left if needed but we hid it for mobile feel
+            // L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+            // 2. Setup Cluster
+            markersCluster = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                maxClusterRadius: 50
+            });
+            map.addLayer(markersCluster);
+
+            // 3. Fetch Data
+            fetchData();
+
+            // 4. Events
+            document.getElementById('btn-locate').addEventListener('click', locateUser);
+
+            // Search Input
+            document.getElementById('search-input').addEventListener('input', () => {
+                applyFilter();
+            });
+
+            // Toggle Search Bar
+            document.getElementById('btn-search-toggle').addEventListener('click', (e) => {
+                const container = document.querySelector('.search-container');
+                const btn = e.currentTarget;
+
+                if (container.style.display === 'block') {
+                    container.style.display = 'none';
+                    btn.classList.remove('active');
+                    // Optional: Clear search when closed? 
+                    // document.getElementById('search-input').value = ''; 
+                    // applyFilter();
+                } else {
+                    container.style.display = 'block';
+                    btn.classList.add('active');
+                    document.getElementById('search-input').focus();
+                }
+            });
+
+            // Filter Delegation
+            document.getElementById('filter-list').addEventListener('click', (e) => {
+                if (e.target.classList.contains('pill')) {
+                    // Clear search when changing filter to avoid "Name + Category" conflict
+                    document.getElementById('search-input').value = '';
+
+                    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                    applyFilter();
+                }
+            });
+        }
+
+        // --- DATA ---
+        function fetchData() {
+            // Google Shim
+            window.google = { visualization: { Query: { setResponse: window.handleJsonp } } };
+
+            const script = document.createElement('script');
+            script.src = SHEET_JSONP;
+            script.onerror = () => { alert("Data Load Failed"); removeLoading(); };
+            document.body.appendChild(script);
+        }
+
+        window.handleJsonp = function (json) {
+            if (!json || !json.table || !json.table.rows) return;
+
+            // --- Dynamic Mapping Logic ---
+            const cols = json.table.cols;
+            const colMap = {};
+            cols.forEach((c, i) => { if (c && c.label) colMap[c.label.toLowerCase().trim()] = i; });
+            const getIdx = (...ns) => { for (let n of ns) if (colMap[n] !== undefined) return colMap[n]; return -1; };
+
+            const idx = {
+                // More robust mapping with synonyms
+                region: getIdx('region', '地區', '區域', 'area', '地域'),
+                name: getIdx('name', '店名', '店家名稱', 'title', '店鋪', '名稱'),
+                cat: getIdx('category', '種類', '分類', 'type', 'class'),
+                price: getIdx('price', 'price', '預算', 'cost'),
+                must: getIdx('must_order', 'must', '推薦菜色', '必點', 'recommend'),
+                desc: getIdx('description', 'desc', '介紹', '心得', 'note', 'content'),
+                addr1: getIdx('address', '地址', 'address', '店址', '住址', '住所', '地點', '位置', 'location', 'addr'),
+                addr2: getIdx('map', 'map code', 'mapcode', 'google map', '地圖'),
+                link: getIdx('link', 'gmap_link', '連結', 'url', 'website'),
+                lat: getIdx('lat', 'latitude', '緯度'),
+                lng: getIdx('lng', 'longitude', '經度'),
+                img: getIdx('image', 'img', '照片', '圖片', 'pic', 'photo')   // New Image Column
+            };
+
+            let uidCounter = 0; // Unique ID Generator
+
+
+            const data = json.table.rows.map(row => {
+                const c = row.c;
+                if (!c) return null;
+                const v = (i) => (i !== -1 && c[i]) ? (c[i].f || c[i].v) : '';
+                const getNum = (i) => {
+                    if (i !== -1 && c[i] && c[i].v !== null) {
+                        const val = parseFloat(c[i].v);
+                        return isNaN(val) ? null : val;
+                    }
+                    return null;
+                };
+
+                // Address Fallback Logic
+                let rawAddr1 = v(idx.addr1);
+                let rawAddr2 = v(idx.addr2); // Map column
+
+                let displayAddr = rawAddr1;
+                let displayLink = v(idx.link);
+
+                // Smart handling of Map Column (addr2)
+                if (rawAddr2) {
+                    if (rawAddr2.startsWith('http')) {
+                        // It's a URL -> Use as Link fallback
+                        if (!displayLink) displayLink = rawAddr2;
+                    } else {
+                        // It's text -> Use as Address fallback
+                        if (!displayAddr) displayAddr = rawAddr2;
+                    }
+                }
+
+                // 2. Try Explicit Columns (J=9, L=11)
+                // Note: Sheet columns are 0-indexed in array. 
+                // J is 9th index (A=0...J=9)
+                // L is 11th index
+                let lat = getNum(c[9]) || getNum(c[10]) || getNum(c[12]);
+                let lng = getNum(c[11]) || getNum(c[12]) || getNum(c[13]);
+
+                // 2. Scan Link & Address/Map Column for URL Coords
+                if (lat === null || lng === null) {
+                    // Check Link, then Map column, then Name (rare but possible)
+                    const targets = [displayLink, rawAddr2, rawAddr1];
+                    for (const url of targets) {
+                        if (!url) continue;
+                        // Regex @lat,lng
+                        const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                        if (atMatch) { lat = parseFloat(atMatch[1]); lng = parseFloat(atMatch[2]); break; }
+                        // Regex q=lat,lng
+                        const qMatch = url.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+                        if (qMatch) { lat = parseFloat(qMatch[1]); lng = parseFloat(qMatch[2]); break; }
+                        // Regex 3d...4d...
+                        const dataMatch = url.match(/3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+                        if (dataMatch) { lat = parseFloat(dataMatch[1]); lng = parseFloat(dataMatch[2]); break; }
+                    }
+                }
+
+                // 3. String Scan "Lat,Lng" in ANY cell
+                if (lat === null || lng === null) {
+                    c.forEach(cell => {
+                        if (cell && cell.v !== null) {
+                            const str = String(cell.v);
+                            // Look for "26.123, 127.456" pattern (space tolerant)
+                            const commaMatch = str.match(/(\d{2,3}\.\d+)[,\s]+(\d{3}\.\d+)/);
+                            if (commaMatch) {
+                                const latC = parseFloat(commaMatch[1]);
+                                const lngC = parseFloat(commaMatch[2]);
+                                // Validate roughly Okinawa box
+                                if (latC > 24 && latC < 28 && lngC > 126 && lngC < 130) {
+                                    lat = latC;
+                                    lng = lngC;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // 4. Single Number Heuristic (Old fallback)
+                if (lat === null || lng === null) {
+                    c.forEach(cell => {
+                        if (cell && typeof cell.v === 'number') {
+                            if (cell.v > 24 && cell.v < 28) lat = cell.v;
+                            if (cell.v > 126 && cell.v < 130) lng = cell.v;
+                        }
+                    });
+                }
+
+                // Get Image
+                let img = v(idx.img);
+                // If not found by header name, try explicit column 11 if it's a string URL
+                if (!img && c[11] && c[11].v && typeof c[11].v === 'string' && c[11].v.startsWith('http')) {
+                    img = String(c[11].v);
+                }
+
+                // Double check it looks like a URL
+                // Ignore Google Search URLs (User pasted search page instead of image)
+                if (img && (!img.startsWith('http') || img.includes('google.com/search'))) {
+                    img = null;
+                }
+
+                if (!v(idx.name)) return null;
+
+                return {
+                    region: v(idx.region),
+                    name: v(idx.name),
+                    category: v(idx.cat) || "其他", // Ensure string
+                    price: v(idx.price),
+                    must: v(idx.must),
+                    desc: v(idx.desc) || displayAddr, // Fallback desc to addr
+                    addr: displayAddr,
+                    link: displayLink,
+                    img: img,
+                    link: displayLink,
+                    img: img,
+                    lat, lng,
+                    _uid: `item-${uidCounter++}` // Assign UI ID
+                };
+            }).filter(x => x);
+
+
+            allData = data;
+            window.allData = data; // Keep both for safety/debugging
+
+            // Render valid ones first
+            // Render valid ones first
+            const validData = data.filter(d => d.lat && d.lng);
+            renderMarkers(validData);
+            renderCards(validData);
+            removeLoading();
+
+
+            // Kick off auto-geocoding for missing ones
+            geocodeMissingItems(data);
+            reverseGeocodeItems(data);
+        };
+
+
+        async function geocodeMissingItems(data) {
+            const missing = data.filter(d => (!d.lat || !d.lng) && d.addr);
+            if (missing.length === 0) return;
+
+            console.log(`Auto-geocoding ${missing.length} items...`);
+
+            for (const item of missing) {
+                // cache key
+                const cacheKey = `geo_coords_${item.addr}`;
+                const cached = localStorage.getItem(cacheKey);
+
+                if (cached) {
+                    const c = JSON.parse(cached);
+                    item.lat = c.lat;
+                    item.lng = c.lng;
+                    applyFilter(true);
+                    continue;
+                }
+
+                try {
+                    // Simple rate limit
+                    await new Promise(r => setTimeout(r, 1200));
+
+                    // Clean address: remove postal codes (e.g. 904-0401) and '日本' to reduce noise
+                    let cleanAddr = item.addr.replace(/\d{3}-\d{4}/g, '').replace(/日本/g, '').trim();
+                    // If result is too short, stick to original
+                    if (cleanAddr.length < 5) cleanAddr = item.addr;
+
+                    let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanAddr)}`;
+                    let res = await fetch(url);
+                    let results = await res.json();
+
+                    // Fallback: Try searching by Name + Region if address fails
+                    if (!results || results.length === 0) {
+                        console.log(`Address lookup failed for ${item.name}, trying Name...`);
+                        await new Promise(r => setTimeout(r, 1200));
+
+                        // Try "Name Okinawa" (More reliable than Region which might be "Hotel")
+                        const query = `${item.name} Okinawa`;
+                        url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+                        res = await fetch(url);
+                        results = await res.json();
+                    }
+
+                    if (results && results.length > 0) {
+                        item.lat = parseFloat(results[0].lat);
+                        item.lng = parseFloat(results[0].lon);
+
+                        localStorage.setItem(cacheKey, JSON.stringify({ lat: item.lat, lng: item.lng }));
+                        applyFilter(true);
+                    }
+                } catch (e) {
+                    console.error("Geocoding failed for", item.name, e);
+                }
+            }
+        }
+
+        async function reverseGeocodeItems(data) {
+            // Find items with Lat/Lng but (NO Addr OR Addr looks like a sentence/invalid)
+            // Heuristic: Real addresses rarely contain "。" (Japanese full stop)
+            const missing = data.filter(d =>
+                d.lat && d.lng && (
+                    !d.addr ||
+                    d.addr.includes('。') ||
+                    d.addr.trim().length === 0
+                )
+            );
+
+            if (missing.length === 0) return;
+
+            console.log(`Reverse-geocoding ${missing.length} items...`);
+
+            for (const item of missing) {
+                const cacheKey = `geo_addr_${item.lat}_${item.lng}`;
+                const cached = localStorage.getItem(cacheKey);
+
+                if (cached) {
+                    item.addr = cached;
+                    applyFilter(true);
+                    continue;
+                }
+
+                try {
+                    // Simple rate limit
+                    await new Promise(r => setTimeout(r, 1200));
+
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.lat}&lon=${item.lng}`;
+                    const res = await fetch(url);
+                    const result = await res.json();
+
+                    if (result && result.display_name) {
+                        // Cleanup address: retain specificity
+                        item.addr = result.display_name;
+                        // Always update cache (even if overwriting 'Loading...')
+                        localStorage.setItem(cacheKey, result.display_name);
+                        applyFilter(true);
+                    }
+                } catch (e) {
+                    console.error("Reverse geocoding failed for", item.name, e);
+                }
+            }
+        }
+
+        // --- MAP & MARKERS ---
+        function renderMarkers(data) {
+            markersCluster.clearLayers();
+
+            data.forEach(item => {
+                // Determine Color
+                let color = '#FCCE02'; // Yellow default
+                let p = (item.price || "").toLowerCase();
+                if (p === 'high') color = '#FF3B30'; // Red
+                if (p === 'low') color = '#34C759'; // Green
+
+                // Determine Icon
+                const iconClass = getCategoryIcon(item.category);
+
+                const customIcon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div style="background-color: ${color}; width: 100%; height: 100%; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas ${iconClass}" style="color: white; font-size: 14px;"></i>
+                    </div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
+                });
+
+                const marker = L.marker([item.lat, item.lng], { icon: customIcon });
+
+                // Add Label logic
+                // Explicitly create tooltip to attach event
+                const tt = L.tooltip({
+                    permanent: true,
+                    direction: 'top',
+                    offset: [0, -32],
+                    className: 'map-label',
+                    interactive: true
+                }).setContent(item.name);
+
+                // Add click listener to tooltip DOM node after it's added
+                // Leaflet doesn't have a direct 'click' event on Tooltip class in all versions, 
+                // but interactive:true should allow map click to pass through or be caught.
+                // We will rely on DOM event propagation.
+
+                marker.bindTooltip(tt);
+
+                // Workaround: When tooltip is clicked, open popup
+                marker.on('tooltipopen', function (e) {
+                    const tooltipNode = e.tooltip._container;
+                    if (tooltipNode) {
+                        tooltipNode.style.pointerEvents = 'auto'; // Double insurance
+                        tooltipNode.onclick = function (evt) {
+                            evt.stopPropagation();
+                            marker.openPopup();
+                        };
+                    }
+                });
+
+                // App-Style Popup
+                const gLink = item.link && item.link.startsWith('http') ? item.link :
+                    `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&destination_place_id=${encodeURIComponent(item.name)}`;
+
+                // Determine Image (Real or Fallback)
+                const displayImg = item.img || getFallbackImage(item.category);
+
+                const html = `
+                    <div class="popup-card">
+                        <div style="width:100%; height:130px; background-image: url('${displayImg}'); background-size: cover; background-position: center; position:relative;">
+                            ${!item.img ? '<div style="position:absolute; bottom:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:10px; padding:2px 8px; border-radius:6px 0 0 0;">示意圖</div>' : ''}
+                        </div>
+                        
+                        <div class="popup-content-p">
+                            <div class="header">
+                                <span class="pill" style="margin:0; flex-shrink:0; background:${color}; color:#fff; font-size:12px; padding:2px 8px; border-radius:4px; height:fit-content; margin-top:2px;">${item.category}</span>
+                                <div class="title" style="margin-left:8px; font-size:18px; font-weight:700; line-height:1.3; color:#1c1c1e;">${item.name}</div>
+                            </div>
+                            
+                            ${item.must ? `<div class="info-row must-order" style="margin-bottom:8px;"><i class="fas fa-star" style="color:#FF9500;"></i> <span style="font-weight:bold; color:#FF3B30;">必點：${item.must}</span></div>` : ''}
+                            
+                            <!-- Always show address if available -->
+                            <!-- Always show address row if we have addr OR lat/lng -->
+                            <div class="info-row" style="color:#666; font-size:13px; margin-bottom:12px; display:flex; align-items:start;">
+                                <i class="fas fa-map-marker-alt" style="margin-right:6px; margin-top:3px; flex-shrink:0;"></i> 
+                                <span id="addr-text-${item._uid}" style="flex:1; line-height:1.4;">${item.addr || '地址讀取中...'}</span>
+                                ${item.addr ? `
+                                <button onclick="window.copyToClipboard('${item.addr.replace(/'/g, "\\'")}')" style="background:none; border:none; color:#007AFF; cursor:pointer; padding:0 8px; margin-left:4px;">
+                                <button onclick="window.copyToClipboard('${item.addr.replace(/'/g, "\\'")}')" style="background:none; border:none; color:#007AFF; cursor:pointer; padding:0 8px; margin-left:4px;">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <button onclick="window.forceRefreshAddress('${item._uid}', ${item.lat}, ${item.lng})" style="background:none; border:none; color:#34C759; cursor:pointer; padding:0 8px;" title="重新讀取地址">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>` : ''}
+                            </div>
+
+
+                            <div class="desc" style="margin-bottom:16px; font-size:14px; color:#333; line-height:1.5;">${item.desc && item.desc !== item.addr ? item.desc : ""}</div>
+                            
+                            <a href="${gLink}" target="_blank" class="btn-nav">
+                                <i class="fas fa-location-arrow"></i> 導航去這裡
+                            </a>
+                        </div>
+                    </div>
+                `;
+
+                // Sync Card Selection on Popup Open
+                marker.on('popupopen', () => {
+                    const cardId = `card-${item._uid}`;
+                    const card = document.getElementById(cardId);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        // Highlight
+                        document.querySelectorAll('.card-item').forEach(c => c.style.borderColor = 'rgba(255, 255, 255, 0.5)');
+                        card.style.borderColor = '#007AFF';
+                    }
+
+                    // On-Demand Geocoding if address is missing
+                    if (!item.addr && item.lat && item.lng) {
+                        resolveAddress(item).then(foundAddr => {
+                            if (foundAddr) {
+                                const span = document.getElementById(`addr-text-${item._uid}`);
+                                if (span) span.textContent = foundAddr;
+                                // Note: Copy button won't appear until re-open, but text is key.
+                            }
+                        });
+                    }
+                });
+
+
+
+                marker.bindPopup(html);
+                markersCluster.addLayer(marker);
+            });
+        }
+
+        async function resolveAddress(item) {
+            const cacheKey = `geo_addr_${item.lat}_${item.lng}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                item.addr = cached;
+                return cached;
+            }
+
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${item.lat}&lon=${item.lng}`;
+                const res = await fetch(url);
+                const result = await res.json();
+                if (result && result.display_name) {
+                    item.addr = result.display_name;
+                    localStorage.setItem(cacheKey, result.display_name);
+                    return result.display_name;
+                }
+            } catch (e) {
+                console.error("Resolve address failed", e);
+            }
+            return null;
+        }
+
+        window.forceRefreshAddress = async function (uid, lat, lng) {
+            const span = document.getElementById(`addr-text-${uid}`);
+            if (span) {
+                span.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 讀取中...';
+            }
+
+            const cacheKey = `geo_addr_${lat}_${lng}`;
+            localStorage.removeItem(cacheKey); // Clear Cache
+
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+                const res = await fetch(url);
+                const result = await res.json();
+
+                if (result && result.display_name) {
+                    // Update Cache
+                    localStorage.setItem(cacheKey, result.display_name);
+
+                    // Update Text Directly
+                    if (span) span.textContent = result.display_name;
+
+                    // Update Item Data in Background (Loop through allData)
+                    // Note: UID is string, checking match
+                    const target = window.allData.find(d => String(d._uid) === String(uid));
+                    if (target) target.addr = result.display_name;
+
+                    showToast("地址已更新！");
+                }
+            } catch (e) {
+                alert("更新失敗，請稍後再試");
+            }
+        };
+
+
+        window.copyToClipboard = function (text) {
+            // Modern API (HTTPS only)
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast("地址已複製");
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    fallbackCopyTextToClipboard(text);
+                });
+            } else {
+                // Fallback for HTTP / Mobile Dev
+                fallbackCopyTextToClipboard(text);
+            }
+        };
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+
+            // Ensure it's not visible but part of DOM
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) showToast("地址已複製");
+                else showToast("複製失敗");
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+                showToast("複製失敗");
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById('toast-msg');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast-msg';
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 80px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.7);
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    z-index: 3000;
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                    backdrop-filter: blur(5px);
+                `;
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.style.opacity = '1';
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 4000);
+
+        }
+
+        function applyFilter(skipZoom) {
+            const activeFilter = document.querySelector('.pill.active').dataset.filter;
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+
+            const filtered = allData.filter(d => {
+                let matchFilter = true;
+                if (activeFilter !== 'all') {
+                    if (['北部', '中部', '南部'].includes(activeFilter)) {
+                        matchFilter = d.region === activeFilter;
+                    } else {
+                        // Category filter - Loose match
+                        const cat = d.category.toLowerCase();
+                        if (activeFilter === '飯店') {
+                            matchFilter = cat.includes('飯店') || cat.includes('hotel') || cat.includes('住宿') || d.region === '飯店';
+                        } else {
+                            matchFilter = d.category === activeFilter;
+                        }
+                    }
+                }
+
+                const matchSearch = !searchVal ||
+                    d.name.toLowerCase().includes(searchVal) ||
+                    d.category.toLowerCase().includes(searchVal) ||
+                    (d.must && d.must.toLowerCase().includes(searchVal)) ||
+                    (d.addr && d.addr.toLowerCase().includes(searchVal));
+
+                return matchFilter && matchSearch;
+            });
+
+            // Safely filter valid coordinates for map operations
+            const validGeoItems = filtered.filter(d => d.lat && d.lng);
+            renderMarkers(validGeoItems);
+            renderCards(filtered); // Cards can show even if no lat/lng (will show '---')
+            updateSearchResults(filtered, searchVal);
+
+
+            // Auto fit bounds (Only if NOT skipped)
+            if (!skipZoom) {
+                if (validGeoItems.length > 0 && (activeFilter !== 'all' || searchVal)) {
+                    const bounds = L.latLngBounds(validGeoItems.map(d => [d.lat, d.lng]));
+                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                } else if (activeFilter === 'all' && !searchVal) {
+                    map.setView([26.4, 127.9], 10);
+                }
+            }
+        }
+
+        function updateSearchResults(filtered, searchVal) {
+            const container = document.getElementById('search-results');
+            if (!searchVal || filtered.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = filtered.slice(0, 10).map(item => {
+                const nameEsc = item.name.replace(/'/g, "\\'");
+                return `
+                <div class="search-item" onclick="selectResult(${item.lat}, ${item.lng}, '${nameEsc}')">
+                    <div class="search-item-name">${item.name}</div>
+                    <div class="search-item-meta">
+                        ${item.category} · ${item.region}
+                        ${item.addr ? `<br><small style="color:#666;">${item.addr}</small>` : ''}
+                    </div>
+                </div>
+            `}).join('');
+            container.style.display = 'block';
+        }
+
+        window.selectResult = function (lat, lng, name) {
+            map.flyTo([lat, lng], 18);
+            document.getElementById('search-results').style.display = 'none';
+            document.getElementById('search-input').value = name;
+
+            // Open popup logic
+            setTimeout(() => {
+                markersCluster.eachLayer(layer => {
+                    const latLng = layer.getLatLng();
+                    // Simple check if it matches
+                    if (Math.abs(latLng.lat - lat) < 0.00001 && Math.abs(latLng.lng - lng) < 0.00001) {
+                        markersCluster.zoomToShowLayer(layer, () => layer.openPopup());
+                    }
+                });
+            }, 500);
+        };
+
+        // --- CARDS LOGIC ---
+        function renderCards(data) {
+            const container = document.getElementById('card-container');
+            // DOM Diffing / Sync to prevent flickering
+
+            const newIds = new Set(data.map(d => `card-${d._uid}`));
+
+            // 1. Remove old items not in new set
+            Array.from(container.children).forEach(child => {
+                if (!newIds.has(child.id)) {
+                    child.remove();
+                }
+            });
+
+            // 2. Add or Move items
+            data.forEach(item => {
+                const cardId = `card-${item._uid}`;
+                let card = document.getElementById(cardId);
+
+                // Update Data if needed (e.g. distance) - for now just existence check
+                if (!card) {
+                    // Create New
+                    const img = item.img || getFallbackImage(item.category);
+                    const desc = item.must ? `必點：${item.must}` : (item.desc || item.addr);
+                    const nameEsc = item.name.replace(/'/g, "\\'");
+
+                    card = document.createElement('div');
+                    card.className = 'card-item';
+                    card.id = cardId;
+                    card.onclick = () => selectResult(item.lat, item.lng, nameEsc);
+
+                    card.innerHTML = `
+                        <img src="${img}" class="card-img" loading="lazy" alt="${item.name}">
+                        <div class="card-info">
+                            <div class="card-top">
+                                <div class="card-title">${item.name}</div>
+                                <div class="card-dist" data-lat="${item.lat}" data-lng="${item.lng}">---</div>
+                            </div>
+                            <div class="card-body-text">${item.category} · ${item.region}</div>
+                            <div class="card-highlight">${desc}</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                } else {
+                    // Update potentially changed props (like lat/lng if geocoded)
+                    const distEl = card.querySelector('.card-dist');
+                    if (item.lat && item.lng) {
+                        distEl.dataset.lat = item.lat;
+                        distEl.dataset.lng = item.lng;
+                    }
+                    // Re-append to ensure order matches 'data' list
+                    container.appendChild(card);
+                }
+            });
+
+            // If we already have user location (global), update distances
+            if (window.currentUserLat && window.currentUserLng) {
+                updateCardDistances(window.currentUserLat, window.currentUserLng);
+            }
+        }
+
+
+        function updateCardDistances(lat, lng) {
+            window.currentUserLat = lat;
+            window.currentUserLng = lng;
+
+            document.querySelectorAll('.card-dist').forEach(el => {
+                const destLat = parseFloat(el.dataset.lat);
+                const destLng = parseFloat(el.dataset.lng);
+                if (!isNaN(destLat) && !isNaN(destLng)) {
+                    const dist = getDistanceFromLatLonInKm(lat, lng, destLat, destLng);
+                    el.textContent = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
+                }
+            });
+        }
+
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const d = R * c; // Distance in km
+            return d;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
+
+
+        // --- UTILS ---
+        function removeLoading() {
+            const el = document.getElementById('loading');
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 400);
+        }
+
+        function locateUser() {
+            if (!navigator.geolocation) return alert("不支援定位");
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    if (userMarker) map.removeLayer(userMarker);
+                    userMarker = L.marker([latitude, longitude], {
+                        icon: L.divIcon({ html: '<div style="width:12px;height:12px;background:#007AFF;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(0,122,255,0.5);"></div>', className: '' })
+                    }).addTo(map);
+                    map.flyTo([latitude, longitude], 13);
+                    updateCardDistances(latitude, longitude);
+
+                },
+                (err) => alert("定位失敗: " + err.message)
+            );
+        }
+
+        // kick off
+        initApp();
+
+        // PWA Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered!', reg))
+                    .catch(err => console.log('SW Failed:', err));
+            });
+        }
+
+
+        function getCategoryIcon(category) {
+            const cat = (category || "").toLowerCase();
+            if (cat.includes('拉麵') || cat.includes('麵')) return 'fa-bowl-rice';
+            if (cat.includes('燒肉') || cat.includes('牛排') || cat.includes('肉')) return 'fa-fire';
+            if (cat.includes('海鮮') || cat.includes('魚') || cat.includes('壽司')) return 'fa-fish';
+            if (cat.includes('甜點') || cat.includes('咖啡') || cat.includes('冰') || cat.includes('鬆餅')) return 'fa-mug-hot';
+            if (cat.includes('酒') || cat.includes('居酒屋')) return 'fa-wine-glass';
+            if (cat.includes('漢堡') || cat.includes('burger')) return 'fa-burger';
+            if (cat.includes('飯糰') || cat.includes('米')) return 'fa-rice-cracker';
+            if (cat.includes('披薩') || cat.includes('pizza')) return 'fa-pizza-slice';
+            if (cat.includes('飯店') || cat.includes('住宿') || cat.includes('hotel')) return 'fa-bed';
+
+            return 'fa-utensils'; // Default
+        }
+
+        function getFallbackImage(category) {
+            const cat = (category || "").toLowerCase();
+
+            // High Quality Public Domain Images (Wikimedia Commons)
+            const images = {
+                ramen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Shoyu_Ramen.jpg/800px-Shoyu_Ramen.jpg',
+                bbq: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Yakiniku_meat_by_jscash_in_Osaka.jpg/800px-Yakiniku_meat_by_jscash_in_Osaka.jpg',
+                sushi: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Sushi_platter.jpg/800px-Sushi_platter.jpg',
+                dessert: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Matcha_cake%2C_white_chocolate_ice_cream_and_berries_2.jpg/800px-Matcha_cake%2C_white_chocolate_ice_cream_and_berries_2.jpg',
+                burger: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/RedDot_Burger_Shed.jpg/800px-RedDot_Burger_Shed.jpg',
+                pizza: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Eq_it-na_pizza-margherita_sep2005_sml.jpg/800px-Eq_it-na_pizza-margherita_sep2005_sml.jpg',
+                hotel: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Hotel_room_Renaissance_Columbus_Ohio.jpg/800px-Hotel_room_Renaissance_Columbus_Ohio.jpg',
+                alcohol: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Kirin_beer.jpg/800px-Kirin_beer.jpg',
+                default: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg/800px-Good_Food_Display_-_NCI_Visuals_Online.jpg'
+            };
+
+            if (cat.includes('拉麵') || cat.includes('麵')) return images.ramen;
+            if (cat.includes('燒肉') || cat.includes('牛排')) return images.bbq;
+            if (cat.includes('海鮮') || cat.includes('魚') || cat.includes('壽司')) return images.sushi;
+            if (cat.includes('甜點') || cat.includes('咖啡') || cat.includes('冰') || cat.includes('鬆餅')) return images.dessert;
+            if (cat.includes('漢堡')) return images.burger;
+            if (cat.includes('披薩')) return images.pizza;
+            if (cat.includes('飯店') || cat.includes('住宿') || cat.includes('hotel')) return images.hotel;
+            if (cat.includes('酒') || cat.includes('居酒屋')) return images.alcohol;
+
+            return images.default;
+        }
+    </script>
+</body>
+
+</html>
