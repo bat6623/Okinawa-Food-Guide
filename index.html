@@ -217,30 +217,7 @@
             /* Adjusted layout */
         }
 
-        .btn-search-toggle {
-            flex: 0 0 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-right: 8px;
-            cursor: pointer;
-            color: #000;
-            border: 1px solid #c7c7cc;
-            transition: all 0.2s;
-        }
-
-        .btn-search-toggle.active {
-            background: var(--accent-color);
-            color: #000;
-            border-color: #d4a000;
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(252, 206, 2, 0.4);
-        }
+        /* Removed old btn-search-toggle styles */
 
         .filter-scroll {
             display: flex;
@@ -284,11 +261,22 @@
             transform: scale(1.02);
         }
 
-        /* Floating Locate Button */
-        .btn-locate {
+        /* FAB Container */
+        .fab-container {
             position: absolute;
             bottom: calc(var(--safe-area-bottom) + 80px);
             right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+            /* Ensure above map */
+            pointer-events: auto;
+            /* Ensure clickable */
+        }
+
+        /* Generic FAB Style */
+        .btn-fab {
             width: 56px;
             height: 56px;
             background: var(--surface);
@@ -301,14 +289,21 @@
             align-items: center;
             font-size: 24px;
             cursor: pointer;
-            pointer-events: auto;
-            border: none;
+            transition: all 0.2s;
         }
 
-        .btn-locate:active {
+        .btn-fab:active {
             transform: scale(0.95);
-            background: #f9f9f9;
         }
+
+        /* Active state for Search Toggle specifically */
+        #btn-search-toggle.active {
+            background: var(--accent-color);
+            color: #000;
+            border-color: #d4a000;
+        }
+
+
 
         /* Popup Styles (Card Style) */
         .leaflet-popup-content-wrapper {
@@ -648,9 +643,6 @@
         </div>
 
         <div class="filter-container">
-            <div class="btn-search-toggle" id="btn-search-toggle">
-                <i class="fas fa-search"></i>
-            </div>
             <div class="filter-scroll" id="filter-list">
                 <div class="pill active" data-filter="all">全部</div>
                 <div class="pill" data-filter="北部">北部</div>
@@ -658,10 +650,6 @@
                 <div class="pill" data-filter="南部">南部</div>
                 <div class="pill" data-filter="飯店">飯店</div>
                 <div class="pill" data-filter="景點">景點</div>
-            </div>
-
-            <div class="btn-search-toggle" onclick="openSettings()" style="margin-left: 8px; margin-right: 16px;">
-                <i class="fas fa-cog" style="color: #666;"></i>
             </div>
         </div>
 
@@ -671,7 +659,12 @@
         <!-- Cards will be injected here -->
     </div>
 
-    <button class="btn-locate" id="btn-locate"><i class="fas fa-crosshairs"></i></button>
+    <!-- Floating Action Buttons (Bottom Right) -->
+    <div class="fab-container">
+        <button class="btn-fab" id="btn-locate"><i class="fas fa-crosshairs"></i></button>
+        <button class="btn-fab" onclick="openSettings()"><i class="fas fa-cog"></i></button>
+        <button class="btn-fab" id="btn-search-toggle"><i class="fas fa-search"></i></button>
+    </div>
     </div>
 
     <div id="map"></div>
