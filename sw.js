@@ -1,4 +1,11 @@
-const CACHE_NAME = 'okinawa-food-v1';
+const CACHE_NAME = 'okinawa-food-v2';
+
+// Force immediate activation when requested
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.action === 'skipWaiting') {
+        self.skipWaiting();
+    }
+});
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
