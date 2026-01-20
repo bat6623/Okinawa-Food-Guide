@@ -640,6 +640,11 @@
             margin-bottom: 2px;
         }
 
+        .card-meta {
+            color: var(--text-sub);
+            font-size: 13px;
+        }
+
         .card-title {
             font-size: 16px;
             font-weight: 700;
@@ -1567,7 +1572,7 @@
                         <div class="card-img" style="background-image: url('${img}');">
                             <span class="card-tag">${item.category}</span>
                         </div>
-                        <div class="card-content" onclick="window.selectResult(${item.lat}, ${item.lng}, '${nameEsc}')">
+                        <div class="card-info" onclick="window.selectResult(${item.lat}, ${item.lng}, '${nameEsc}')">
                             <div class="card-top">
                                 <div class="card-title">${item.name}</div>
                                 <div class="fav-btn" onclick="toggleFavorite('${item._favKey}', this); event.stopPropagation();" 
@@ -1575,7 +1580,9 @@
                                     <i class="${heartClass}" style="color:${heartColor}; font-size:18px;"></i>
                                 </div>
                             </div>
-                            <div class="card-info"><i class="fas fa-map-marker-alt"></i> ${item.region} · ${item.price || '-'}</div>
+                            <div class="card-meta" style="font-size:13px; color:#666; margin-bottom:4px;">
+                                <i class="fas fa-map-marker-alt" style="margin-right:4px;"></i> ${item.region} · ${item.price || '-'}
+                            </div>
                             <div class="card-desc">${desc}</div>
                         </div>
                     `;
