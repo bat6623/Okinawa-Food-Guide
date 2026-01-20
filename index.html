@@ -1963,6 +1963,21 @@
             applyFilter(true);
         }
 
+        window.forceAppUpdate = function () {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                    showToast("已清除快取，正在重新載入...", 2000);
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1000);
+                });
+            } else {
+                window.location.reload(true);
+            }
+        }
     </script>
 </body>
 
