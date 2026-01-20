@@ -748,8 +748,7 @@
 
     <div id="map"></div>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal"
+    <div id="settings-modal" onclick="if(event.target === this) closeSettings()"
         style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
         <div
             style="background:white; width:90%; max-width:400px; border-radius:16px; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
@@ -1648,7 +1647,10 @@
         }
 
         function locateUser() {
-            if (!navigator.geolocation) return alert("不支援定位");
+            if (!navigator.geolocation) return showToast("您的瀏覽器不支援定位功能");
+
+            showToast("正在搜尋您的位置...", 5000);
+
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
@@ -1658,9 +1660,19 @@
                     }).addTo(map);
                     map.flyTo([latitude, longitude], 13);
                     updateCardDistances(latitude, longitude);
-
+                    showToast("已定位至您的位置");
                 },
-                (err) => alert("定位失敗: " + err.message)
+                (err) => {
+                    let msg = "定位失敗";
+                    switch (err.code) {
+                        case err.PERMISSION_DENIED: msg = "定位被拒絕，請開啟權限"; break;
+                        case err.POSITION_UNAVAILABLE: msg = "無法偵測位置"; break;
+                        case err.TIMEOUT: msg = "定位請求逾時"; break;
+                    }
+                    showToast(msg);
+                    console.warn(err);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
