@@ -1227,7 +1227,11 @@
 
                 const html = `
                     <div class="popup-card">
-                        <div style="width:100%; height:130px; background-image: url('${displayImg}'); background-size: cover; background-position: center; position:relative;">
+                        <div style="width:100%; height:130px; position:relative; overflow:hidden;">
+                             <img src="${displayImg}" 
+                                  onerror="this.onerror=null; this.src='${getFallbackImage(item.category)}';" 
+                                  style="width:100%; height:100%; object-fit:cover; display:block;" />
+                            
                             ${!item.img ? '<div style="position:absolute; bottom:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:10px; padding:2px 8px; border-radius:6px 0 0 0;">示意圖</div>' : ''}
                         </div>
                         
@@ -1569,7 +1573,11 @@
                     card.className = 'card';
                     card.id = cardId;
                     card.innerHTML = `
-                        <div class="card-img" style="background-image: url('${img}');">
+                        <div class="card-img" style="position:relative; overflow:hidden;">
+                            <img src="${img}" 
+                                 onerror="this.onerror=null; this.src='${getFallbackImage(item.category)}';" 
+                                 style="width:100%; height:100%; object-fit:cover; display:block;" />
+                            
                             <span class="card-tag">${item.category}</span>
                         </div>
                         <div class="card-info" onclick="window.selectResult(${item.lat}, ${item.lng}, '${nameEsc}')">
