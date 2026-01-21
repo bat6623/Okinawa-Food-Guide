@@ -147,7 +147,7 @@
             <div style="margin-top:20px; border-top:1px solid #eee; padding-top:20px; text-align:center;">
                 <button onclick="forceAppUpdate()"
                     style="background:none; border:none; color:var(--text-sub); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; width:100%; gap:6px;">
-                    <i class="fas fa-sync"></i> 檢查並更新應用程式 <span style="opacity:0.6;">(v9)</span>
+                    <i class="fas fa-sync"></i> 檢查並更新應用程式 <span style="opacity:0.6;">(v11)</span>
                 </button>
             </div>
 
@@ -838,13 +838,12 @@
                         <div class="card-info" onclick="window.selectResult(${item.lat}, ${item.lng}, '${nameEsc}')">
                             <div class="card-top">
                                 <div class="card-title">${item.name}</div>
-                                    <div class="schedule-btn" onclick="addToSchedule('${item._uid}', event); event.stopPropagation();" style="cursor:pointer; color:#007AFF;">
-                                        <i class="far fa-calendar-plus" style="font-size:18px;"></i>
-                                    </div>
-                                    <div class="fav-btn" onclick="toggleFavorite('${item._favKey}', this); event.stopPropagation();" 
-                                        style="cursor:pointer; padding:0 4px;">
-                                        <i class="${heartClass}" style="color:${heartColor}; font-size:18px;"></i>
-                                    </div>
+                                <div class="schedule-btn" onclick="addToSchedule('${item._uid}', event); event.stopPropagation();" style="cursor:pointer; color:#007AFF;">
+                                    <i class="far fa-calendar-plus" style="font-size:18px;"></i>
+                                </div>
+                                <div class="fav-btn" onclick="toggleFavorite('${item._favKey}', this); event.stopPropagation();" 
+                                    style="cursor:pointer; padding:0 4px;">
+                                    <i class="${heartClass}" style="color:${heartColor}; font-size:18px;"></i>
                                 </div>
                             </div>
                             <div class="card-meta" style="font-size:13px; color:#666; margin-bottom:4px;">

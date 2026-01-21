@@ -119,8 +119,28 @@
         </button>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal"
+        style="display:none; position:fixed; inset:0; z-index:2000; justify-content:center; align-items:center; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px);">
+        <div
+            style="background:rgba(255, 255, 255, 0.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); width:300px; padding:24px; border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,0.2); text-align:center; border:1px solid rgba(255,255,255,0.4);">
+            <i class="fas fa-exclamation-circle" style="font-size:40px; color:#ff3b30; margin-bottom:16px;"></i>
+            <h3 style="font-size:18px; font-weight:700; margin-bottom:8px; color:var(--text-main);">確定刪除？</h3>
+            <p style="font-size:14px; color:var(--text-sub); margin-bottom:24px; line-height:1.5;">
+                刪除後無法復原，<br>您確定要移除這天的行程嗎？</p>
+            <div style="display:flex; gap:12px;">
+                <button onclick="closeDeleteModal()"
+                    style="flex:1; padding:12px; border:none; background:#f2f2f7; color:var(--text-main); border-radius:12px; font-weight:600; cursor:pointer;">取消</button>
+                <button onclick="confirmDeleteDay()"
+                    style="flex:1; padding:12px; border:none; background:#ff3b30; color:white; border-radius:12px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(255, 59, 48, 0.3);">刪除</button>
+            </div>
+        </div>
+    </div>
+
     <script src="data.js"></script>
     <script>
+        let dayToDeleteIndex = -1;
+
         // Init
         loadData(() => {
             renderSchedule();
@@ -150,22 +170,18 @@
                 let dayHTML = `
                     <div class="day-header">
                         <span>Day ${dayIndex + 1}</span>
-                        <button onclick="deleteDay(${dayIndex})" style="color:#999; border:none; background:none; font-size:14px;"><i class="far fa-trash-alt"></i></button>
+                        <button onclick="openDeleteModal(${dayIndex})" style="color:#999; border:none; background:none; font-size:14px; padding:8px;"><i class="far fa-trash-alt"></i></button>
                     </div>
                 `;
 
                 if (day.items && day.items.length > 0) {
                     day.items.forEach((item, itemIndex) => {
-                        // Find full data
-                        // Try favKey first (stable), then uid (fallback)
                         let dataItem = null;
                         if (window.allData) {
                             if (item.favKey) dataItem = window.allData.find(d => d._favKey === item.favKey);
                             if (!dataItem) dataItem = window.allData.find(d => String(d._uid) === String(item.uid));
                         }
 
-                        // Use fallback based on name or category if data logic fails (or simple placeholder)
-                        // data.js provides getFallbackImage
                         const img = dataItem && dataItem.img ? dataItem.img : (dataItem ? getFallbackImage(dataItem.category) : '');
                         const name = item.name;
                         const meta = dataItem ? `${dataItem.category} · ${dataItem.region}` : '';
@@ -199,13 +215,25 @@
             renderSchedule();
         }
 
-        function deleteDay(index) {
-            if (confirm('確定要刪除這一天的行程嗎？')) {
-                let schedule = JSON.parse(localStorage.getItem('my_schedule') || '[]');
-                schedule.splice(index, 1);
-                localStorage.setItem('my_schedule', JSON.stringify(schedule));
-                renderSchedule();
-            }
+        function openDeleteModal(index) {
+            dayToDeleteIndex = index;
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+            dayToDeleteIndex = -1;
+        }
+
+        function confirmDeleteDay() {
+            if (dayToDeleteIndex === -1) return;
+
+            let schedule = JSON.parse(localStorage.getItem('my_schedule') || '[]');
+            schedule.splice(dayToDeleteIndex, 1);
+            localStorage.setItem('my_schedule', JSON.stringify(schedule));
+
+            renderSchedule();
+            closeDeleteModal();
         }
 
         function removeFromDay(dayIndex, itemIndex, e) {
