@@ -479,7 +479,7 @@
                             ${item.must ? `<div class="info-row must-order" style="margin-bottom:8px;"><i class="fas fa-star" style="color:#FF9500;"></i> <span style="font-weight:bold; color:#FF3B30;">必點：${item.must}</span></div>` : ''}
                             
                             <div style="margin-bottom:12px;">
-                                <button onclick="addToSchedule('${item._uid}', '${item.name.replace(/'/g, "\\'")}', event)" style="width:100%; border:1px solid #007AFF; color:#007AFF; background:white; padding:8px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; display:flex; justify-content:center; align-items:center;">
+                                <button onclick="addToSchedule('${item._uid}', event)" style="width:100%; border:1px solid #007AFF; color:#007AFF; background:white; padding:8px; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px; display:flex; justify-content:center; align-items:center;">
                                     <i class="far fa-calendar-plus" style="margin-right:6px;"></i> 加入行程
                                 </button>
                             </div>
@@ -838,8 +838,7 @@
                         <div class="card-info" onclick="window.selectResult(${item.lat}, ${item.lng}, '${nameEsc}')">
                             <div class="card-top">
                                 <div class="card-title">${item.name}</div>
-                                <div style="display:flex; gap:8px; align-items:center;">
-                                    <div class="schedule-btn" onclick="addToSchedule('${item._uid}', '${item.name.replace(/'/g, "\\'")}', event); event.stopPropagation();" style="cursor:pointer; color:#007AFF;">
+                                    <div class="schedule-btn" onclick="addToSchedule('${item._uid}', event); event.stopPropagation();" style="cursor:pointer; color:#007AFF;">
                                         <i class="far fa-calendar-plus" style="font-size:18px;"></i>
                                     </div>
                                     <div class="fav-btn" onclick="toggleFavorite('${item._favKey}', this); event.stopPropagation();" 
@@ -1095,22 +1094,25 @@
         // --- SCHEDULE ---
         let currentScheduleItem = null;
 
-        window.addToSchedule = function (uid, name, event) {
+        window.addToSchedule = function (uid, event) {
             if (event) event.stopPropagation();
 
             // Find item to get stable ID
             // Note: window.allData populated by loadData
             const item = window.allData ? window.allData.find(d => String(d._uid) === String(uid)) : null;
 
+            let name = "未知景點";
             if (item) {
+                name = item.name;
                 currentScheduleItem = {
                     favKey: item._favKey,
                     name: item.name,
                     uid: item._uid
                 };
             } else {
-                // Fallback (should rare)
-                currentScheduleItem = { uid, name, favKey: null };
+                // Should not happen if data is consistent, but handle gracefully
+                console.warn("Schedule: Item not found for uid", uid);
+                return;
             }
 
             document.getElementById('schedule-target-name').textContent = `將 "${name}" 加入到...`;
