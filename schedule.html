@@ -99,20 +99,17 @@
 
 <body>
     <div class="schedule-header">
-        <button onclick="window.location.href='index.html'"
-            style="background:none; border:none; font-size:16px; font-weight:600; color:var(--text-main); display:flex; align-items:center;">
-            <i class="fas fa-chevron-left" style="margin-right:8px;"></i> 回地圖
-        </button>
+        <div style="width:24px;"></div> <!-- Spacer -->
         <h1 style="font-size:18px; font-weight:700;">我的行程</h1>
-        <div style="width:60px;"></div> <!-- Spacer -->
+        <div style="width:24px;"></div> <!-- Spacer -->
     </div>
 
-    <div id="schedule-container" style="padding-bottom: 80px;">
+    <div id="schedule-container" style="padding-bottom: 150px;">
         <!-- Days injected here -->
     </div>
 
     <div
-        style="position:fixed; bottom:var(--safe-area-bottom); left:0; width:100%; padding:16px; display:flex; justify-content:center; pointer-events:none;">
+        style="position:fixed; bottom:calc(var(--safe-area-bottom) + 70px); left:0; width:100%; padding:16px; display:flex; justify-content:center; pointer-events:none; z-index:200;">
         <button onclick="addDay()"
             style="pointer-events:auto; background:var(--primary-color); color:white; border:none; padding:12px 24px; border-radius:30px; font-weight:700; box-shadow:0 4px 12px rgba(255, 56, 92, 0.4); display:flex; align-items:center;">
             <i class="fas fa-plus" style="margin-right:8px;"></i> 新增天數
@@ -136,6 +133,25 @@
             </div>
         </div>
     </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item" onclick="window.location.href='index.html'">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>地圖</span>
+        </button>
+        <button class="nav-item" onclick="window.location.href='list.html'">
+            <i class="fas fa-list-ul"></i>
+            <span>列表</span>
+        </button>
+        <button class="nav-item active" onclick="window.location.reload()">
+            <i class="fas fa-calendar-alt"></i>
+            <span>行程</span>
+        </button>
+        <button class="nav-item" onclick="alert('請回到地圖頁進行設定')">
+            <i class="fas fa-cog"></i>
+            <span>設定</span>
+        </button>
+    </nav>
 
     <script src="data.js"></script>
     <script>

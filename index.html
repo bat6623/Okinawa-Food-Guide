@@ -67,23 +67,36 @@
 
     <!-- Bottom Actions -->
     <div class="bottom-actions">
-        <button class="btn-action" id="btn-search-toggle" style="margin-bottom:12px;">
-            <i class="fas fa-search"></i>
-        </button>
-        <button class="btn-action" onclick="openSettings()" style="margin-bottom:12px;">
-            <i class="fas fa-cog"></i>
-        </button>
+        <!-- Search Toggle Removed -->
+        <!-- Settings Button Removed -->
         <button class="btn-action" id="btn-fav-toggle" onclick="toggleFavoritesMode()" style="margin-bottom:12px;">
             <i class="fas fa-heart"></i>
         </button>
-        <button class="btn-action" onclick="window.location.href='schedule.html'" style="margin-bottom:12px;">
-            <i class="fas fa-calendar-alt"></i>
-        </button>
+        <!-- Schedule Button Removed -->
         <button class="btn-action" id="btn-locate">
             <i class="fas fa-crosshairs"></i>
         </button>
     </div>
     </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="window.location.reload()">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>地圖</span>
+        </button>
+        <button class="nav-item" onclick="window.location.href='list.html'">
+            <i class="fas fa-list-ul"></i>
+            <span>列表</span>
+        </button>
+        <button class="nav-item" onclick="window.location.href='schedule.html'">
+            <i class="fas fa-calendar-alt"></i>
+            <span>行程</span>
+        </button>
+        <button class="nav-item" onclick="openSettings()">
+            <i class="fas fa-cog"></i>
+            <span>設定</span>
+        </button>
+    </nav>
 
     <div id="map"></div>
 
@@ -144,18 +157,13 @@
             </div>
 
             <!-- List View Link -->
-            <div style="margin-top:20px; text-align:center;">
-                <button onclick="window.location.href='list.html'"
-                    style="width:100%; padding:14px; border:none; background:#f2f2f7; color:var(--text-main); border-radius:16px; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fas fa-list-ul" style="margin-right:8px;"></i> 切換至列表模式
-                </button>
-            </div>
+            <!-- List View Link Moved to Bottom Nav -->
 
             <!-- App Update Force -->
             <div style="margin-top:20px; border-top:1px solid #eee; padding-top:20px; text-align:center;">
                 <button onclick="forceAppUpdate()"
                     style="background:none; border:none; color:var(--text-sub); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; width:100%; gap:6px;">
-                    <i class="fas fa-sync"></i> 檢查並更新應用程式 <span style="opacity:0.6;">(v12)</span>
+                    <i class="fas fa-sync"></i> 檢查並更新應用程式 <span style="opacity:0.6;">(v13)</span>
                 </button>
             </div>
 

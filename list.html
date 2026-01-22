@@ -154,10 +154,6 @@
 <body>
     <div class="page-header">
         <div class="header-top">
-            <button onclick="window.location.href='index.html'"
-                style="background:none; border:none; font-size:16px; font-weight:600; color:var(--text-main); display:flex; align-items:center;">
-                <i class="fas fa-chevron-left" style="margin-right:8px;"></i> 地圖模式
-            </button>
             <h1 style="font-size:18px; font-weight:700;">所有景點</h1>
             <div style="width:60px; text-align:right; font-size:13px; color:#999;" id="count-display">0 個</div>
         </div>
@@ -182,9 +178,28 @@
         </div>
     </div>
 
-    <div id="list-container" class="list-grid">
+    <div id="list-container" class="list-grid page-offset">
         <!-- Cards injected here -->
     </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item" onclick="window.location.href='index.html'">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>地圖</span>
+        </button>
+        <button class="nav-item active" onclick="window.location.reload()">
+            <i class="fas fa-list-ul"></i>
+            <span>列表</span>
+        </button>
+        <button class="nav-item" onclick="window.location.href='schedule.html'">
+            <i class="fas fa-calendar-alt"></i>
+            <span>行程</span>
+        </button>
+        <button class="nav-item" onclick="alert('請回到地圖頁進行設定')">
+            <i class="fas fa-cog"></i>
+            <span>設定</span>
+        </button>
+    </nav>
 
     <!-- Delete Confirmation Modal (Reused) -->
     <!-- Not needed here as we only Add to schedule, not delete days -->
