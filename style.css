@@ -283,7 +283,7 @@ html {
 /* Floating Bottom Actions */
 .bottom-actions {
     position: absolute;
-    bottom: calc(var(--safe-area-bottom) + 80px);
+    bottom: calc(var(--safe-area-bottom) + 95px);
     /* Above card view */
     right: 16px;
     display: flex;
@@ -548,7 +548,7 @@ html {
 /* Card Scroll View */
 .card-scroll-view {
     position: absolute;
-    bottom: calc(65px + var(--safe-area-bottom));
+    bottom: calc(90px + var(--safe-area-bottom));
     left: 0;
     width: 100%;
     height: auto;
@@ -691,7 +691,7 @@ html {
 
 /* Adjust Locate Button Position */
 .btn-locate {
-    bottom: calc(180px + var(--safe-area-bottom));
+    bottom: calc(205px + var(--safe-area-bottom));
     /* Move above cards */
 }
 
@@ -701,7 +701,7 @@ html {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: calc(60px + var(--safe-area-bottom));
+    height: calc(85px + var(--safe-area-bottom));
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -752,5 +752,5 @@ html {
 
 /* Push content up to avoid overlap */
 .page-offset {
-    padding-bottom: calc(80px + var(--safe-area-bottom)) !important;
+    padding-bottom: calc(100px + var(--safe-area-bottom)) !important;
 }
