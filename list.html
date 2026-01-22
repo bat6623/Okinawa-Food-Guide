@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>景點列表 | Okinawa Food Guide</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* List Page Specific Styles */
+        .page-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(254, 242, 242, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: var(--safe-area-top) 16px 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            padding: 16px;
+            padding-bottom: 100px;
+        }
+
+        @media (min-width: 768px) {
+            .list-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 24px;
+                padding: 24px;
+            }
+        }
+
+        /* Override Card styles for Grid */
+        .list-card {
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .list-card:active {
+            transform: scale(0.98);
+        }
+
+        .lc-img-box {
+            position: relative;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+        }
+
+        .lc-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .lc-tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .lc-info {
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lc-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .lc-meta {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .lc-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .lc-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f2f2f7;
+            color: var(--text-sub);
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lc-btn.active {
+            background: #ffebeb;
+            color: #ff3b30;
+        }
+
+        .lc-btn.schedule {
+            color: #007AFF;
+            background: #eaf4ff;
+        }
+
+        /* Search & Filter override */
+        .filter-scroll {
+            margin: 0;
+            padding-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-header">
+        <div class="header-top">
+            <button onclick="window.location.href='index.html'"
+                style="background:none; border:none; font-size:16px; font-weight:600; color:var(--text-main); display:flex; align-items:center;">
+                <i class="fas fa-chevron-left" style="margin-right:8px;"></i> 地圖模式
+            </button>
+            <h1 style="font-size:18px; font-weight:700;">所有景點</h1>
+            <div style="width:60px; text-align:right; font-size:13px; color:#999;" id="count-display">0 個</div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-box" style="margin-bottom: 12px;">
+            <i class="fas fa-search" style="color:#999; margin-right:10px;"></i>
+            <input type="text" id="list-search" placeholder="搜尋景點、美食..." oninput="handleSearch()">
+            <i class="fas fa-times-circle" id="clear-search" onclick="clearSearch()"
+                style="display:none; color:#ccc;"></i>
+        </div>
+
+        <!-- Categories -->
+        <div class="filter-scroll" id="category-filter">
+            <div class="pill active" onclick="filterCategory('all', this)">全部</div>
+            <div class="pill" onclick="filterCategory('南部', this)">南部</div>
+            <div class="pill" onclick="filterCategory('中部', this)">中部</div>
+            <div class="pill" onclick="filterCategory('北部', this)">北部</div>
+            <div class="pill" onclick="filterCategory('美食', this)">美食</div>
+            <div class="pill" onclick="filterCategory('景點', this)">景點</div>
+            <div class="pill" onclick="filterCategory('購物', this)">購物</div>
+        </div>
+    </div>
+
+    <div id="list-container" class="list-grid">
+        <!-- Cards injected here -->
+    </div>
+
+    <!-- Delete Confirmation Modal (Reused) -->
+    <!-- Not needed here as we only Add to schedule, not delete days -->
+
+    <!-- Schedule Modal (Reused for Add) -->
+    <div id="schedule-modal"
+        style="display:none; position:fixed; inset:0; z-index:2000; justify-content:center; align-items:end; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px);">
+        <div
+            style="width:100%; max-width:600px; background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(20px); border-radius:24px 24px 0 0; padding:24px; box-shadow:0 -10px 40px rgba(0,0,0,0.1); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 id="schedule-target-name" style="font-size:18px; font-weight:700;">加入行程</h3>
+                <button onclick="closeScheduleModal()"
+                    style="background:#f2f2f7; border:none; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i
+                        class="fas fa-times"></i></button>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <button onclick="createNewDayAndAdd()"
+                    style="width:100%; padding:14px; background:var(--primary-color); color:white; border:none; border-radius:16px; font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(255, 56, 92, 0.3);">
+                    <i class="fas fa-plus-circle" style="margin-right:8px;"></i> 建立新的一天並加入
+                </button>
+            </div>
+
+            <div style="font-size:13px; color:#999; margin-bottom:12px; font-weight:600;">或加入現有行程：</div>
+            <div id="schedule-days-list"
+                style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+        let currentFilter = 'all';
+        let currentSearch = '';
+        let favorites = new Set(JSON.parse(localStorage.getItem('my_favorites') || '[]'));
+        let currentScheduleItem = null;
+
+        // Load Data
+        loadData(() => {
+            renderList();
+        });
+
+        function renderList() {
+            const container = document.getElementById('list-container');
+            container.innerHTML = '';
+
+            let filtered = window.allData;
+
+            // Category Filter
+            if (currentFilter !== 'all') {
+                if (['南部', '中部', '北部'].includes(currentFilter)) {
+                    filtered = filtered.filter(item => item.region === currentFilter);
+                } else {
+                    filtered = filtered.filter(item => item.category.includes(currentFilter));
+                }
+            }
+
+            // Search Filter
+            if (currentSearch) {
+                const term = currentSearch.toLowerCase();
+                filtered = filtered.filter(item =>
+                    item.name.toLowerCase().includes(term) ||
+                    (item.desc && item.desc.toLowerCase().includes(term)) ||
+                    (item.addr && item.addr.toLowerCase().includes(term))
+                );
+            }
+
+            // Update Count
+            document.getElementById('count-display').textContent = `${filtered.length} 個`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align:center; padding:60px 20px; color:#999;">
+                        <i class="fas fa-search" style="font-size:48px; margin-bottom:16px; opacity:0.3;"></i>
+                        <p>找不到相關景點</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const isFav = favorites.has(item._favKey);
+                const heartClass = isFav ? "fas fa-heart" : "far fa-heart";
+                const heartBtnClass = isFav ? "lc-btn active" : "lc-btn";
+
+                const card = document.createElement('div');
+                card.className = 'list-card';
+                card.onclick = () => window.location.href = `index.html?locate=${item._uid}`;
+
+                // Fallback img logic
+                const img = item.img ? item.img : getFallbackImage(item.category);
+
+                card.innerHTML = `
+                    <div class="lc-img-box">
+                        <img src="${img}" class="lc-img" onerror="this.onerror=null; this.src='${getFallbackImage(item.category)}'">
+                        <span class="lc-tag">${item.category}</span>
+                    </div>
+                    <div class="lc-info">
+                        <div class="lc-title">${item.name}</div>
+                        <div class="lc-meta">
+                            <i class="fas fa-map-marker-alt" style="margin-right:4px;"></i> ${item.region}
+                        </div>
+                        <div class="lc-actions">
+                            <button class="${heartBtnClass}" onclick="toggleListFavorite('${item._favKey}', this, event)">
+                                <i class="${heartClass}"></i>
+                            </button>
+                            <button class="lc-btn schedule" onclick="addToListSchedule('${item._uid}', '${item.name.replace(/'/g, "\\'")}', '${item._favKey}', event)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- Interactions --- //
+
+        function handleSearch() {
+            const val = document.getElementById('list-search').value.trim();
+            currentSearch = val;
+            document.getElementById('clear-search').style.display = val ? 'block' : 'none';
+            renderList();
+        }
+
+        function clearSearch() {
+            document.getElementById('list-search').value = '';
+            currentSearch = '';
+            document.getElementById('clear-search').style.display = 'none';
+            renderList();
+        }
+
+        function filterCategory(cat, el) {
+            currentFilter = cat;
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            renderList();
+        }
+
+        function toggleListFavorite(key, btn, e) {
+            if (e) e.stopPropagation();
+
+            if (favorites.has(key)) {
+                favorites.delete(key);
+                btn.classList.remove('active');
+                btn.querySelector('i').className = 'far fa-heart';
+            } else {
+                favorites.add(key);
+                btn.classList.add('active');
+                btn.querySelector('i').className = 'fas fa-heart';
+            }
+            localStorage.setItem('my_favorites', JSON.stringify([...favorites]));
+        }
+
+        // --- Schedule Logic (reused basic parts) --- //
+
+        function addToListSchedule(uid, name, favKey, e) {
+            if (e) e.stopPropagation();
+            currentScheduleItem = { uid, name, favKey };
+            document.getElementById('schedule-target-name').textContent = `將 "${name}" 加入...`;
+            renderScheduleDays();
+            document.getElementById('schedule-modal').style.display = 'flex';
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('schedule-modal').style.display = 'none';
+            currentScheduleItem = null;
+        }
+
+        function renderScheduleDays() {
+            const list = document.getElementById('schedule-days-list');
+            list.innerHTML = '';
+            const schedule = JSON.parse(localStorage.getItem('my_schedule') || '[]');
+
+            if (schedule.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:10px; color:#ccc;">尚無行程天數</div>';
+                return;
+            }
+
+            schedule.forEach((day, idx) => {
+                const btn = document.createElement('div');
+                btn.style.cssText = "padding:12px; background:#f9f9f9; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;";
+                btn.innerHTML = `<span>Day ${idx + 1} (${day.items.length} 個景點)</span> <i class="fas fa-chevron-right" style="color:#ccc;"></i>`;
+                btn.onclick = () => addToDay(idx);
+                list.appendChild(btn);
+            });
+        }
+
+        function createNewDayAndAdd() {
+            let schedule = JSON.parse(localStorage.getItem('my_schedule') || '[]');
+            schedule.push({ items: [currentScheduleItem] });
+            localStorage.setItem('my_schedule', JSON.stringify(schedule));
+            closeScheduleModal();
+            // Optional: Toast
+            alert(`已建立 Day ${schedule.length} 並加入: ${currentScheduleItem.name}`);
+        }
+
+        function addToDay(dayIdx) {
+            let schedule = JSON.parse(localStorage.getItem('my_schedule') || '[]');
+            schedule[dayIdx].items.push(currentScheduleItem);
+            localStorage.setItem('my_schedule', JSON.stringify(schedule));
+            closeScheduleModal();
+            alert(`已加入 Day ${dayIdx + 1}: ${currentScheduleItem.name}`);
+        }
+
+    </script>
+</body>
+
+</html>
