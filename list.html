@@ -183,15 +183,15 @@
     </div>
 
     <nav class="bottom-nav">
-        <button class="nav-item" onclick="window.location.href='index.html'">
+        <button class="nav-item" onclick="navigateTo('index.html')">
             <i class="fas fa-map-marked-alt"></i>
             <span>地圖</span>
         </button>
-        <button class="nav-item active" onclick="window.location.reload()">
+        <button class="nav-item active" onclick="reloadPage()">
             <i class="fas fa-list-ul"></i>
             <span>列表</span>
         </button>
-        <button class="nav-item" onclick="window.location.href='schedule.html'">
+        <button class="nav-item" onclick="navigateTo('schedule.html')">
             <i class="fas fa-calendar-alt"></i>
             <span>行程</span>
         </button>
@@ -266,7 +266,7 @@
             <div style="margin-top:20px; border-top:1px solid #eee; padding-top:20px; text-align:center;">
                 <button onclick="forceAppUpdate()"
                     style="background:none; border:none; color:var(--text-sub); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; width:100%; gap:6px;">
-                    <i class="fas fa-sync"></i> 檢查並更新應用程式 <span style="opacity:0.6;">(v18)</span>
+                    <i class="fas fa-sync"></i> 檢查並更新應用程式 <span style="opacity:0.6;">(v19)</span>
                 </button>
             </div>
         </div>
@@ -507,6 +507,20 @@
                     window.location.reload(true);
                 }
             }
+        }
+
+
+
+        function navigateTo(url) {
+            setTimeout(() => {
+                window.location.href = url;
+            }, 50);
+        }
+
+        function reloadPage() {
+            setTimeout(() => {
+                window.location.reload();
+            }, 50);
         }
 
     </script>

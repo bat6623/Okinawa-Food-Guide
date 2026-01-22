@@ -729,6 +729,7 @@ html {
     border: none;
     cursor: pointer;
     transition: all 0.2s;
+    touch-action: manipulation;
 }
 
 .nav-item i {
